@@ -82,12 +82,14 @@ cd Mini-Spotify-ESP32
 Using uv:
 
 ```bash
+cd Python
 uv sync
 ```
 
 Or with pip:
 
 ```bash
+cd Python
 pip install -r requirements.txt
 ```
 
@@ -106,6 +108,7 @@ pip install -r requirements.txt
 ```text
 http://127.0.0.1:8888/callback
 ```
+5. Under APIs used, enable: Web API and Web Playback SDK
 
 Create a `.env` file:
 
@@ -119,17 +122,9 @@ SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 
 ## Flashing the ESP32
 
-Open the firmware directory:
-
-```bash
-cd firmware
-```
-
-Upload using PlatformIO:
-
-```bash
-pio run --target upload
-```
+1. In VSCode, install the PlatformIO extension and create a new project
+2. In the new project you will see `platformio.ini` and in the `src` folder, `main.cpp` (create one if you don't see it)
+3. Copy the `platformio.ini` and `main.cpp` from the `ESP32` folder
 
 ---
 
@@ -138,12 +133,14 @@ pio run --target upload
 Linux:
 
 ```bash
+cd Python
 python main.py
 ```
 
 Windows:
 
 ```bash
+cd Python
 python main.py
 ```
 
@@ -170,20 +167,18 @@ Blinding Lights
 * [x] Spotify Web API integration
 * [x] USB serial communication
 * [ ] CLI application + background service
+* [ ] Scrolling text for long titles
+* [ ] Auto-start on login
 
 ### v1.1
 
 * [ ] Automatic ESP32 detection
-* [ ] Scrolling text for long titles
 * [ ] Improved serial protocol
 
 ### v2.0
 
-* [ ] CLI application
 * [ ] One-command setup
 * [ ] Automatic firmware flashing
-* [ ] Service installation
-* [ ] Auto-start on login
 
 ### Future Ideas
 
