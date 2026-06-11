@@ -1,14 +1,15 @@
 import time
+import socket
 import serial
 import spotipy
 
 from dotenv import load_dotenv
 from spotipy.oauth2 import SpotifyOAuth
+from requests.exceptions import ConnectionError, Timeout
+from spotipy.exceptions import SpotifyException
 import os
 
-# -------------------------
-# CONFIG
-# -------------------------
+# Config
 
 # SERIAL_PORT = "COM3"      # Windows
 
@@ -17,28 +18,51 @@ SERIAL_PORT = "/dev/ttyUSB0"   # Linux
 
 BAUDRATE = 115200
 
-# -------------------------
-# LOAD ENV
-# -------------------------
+POLL_INTERVAL = 2          # seconds between Spotify polls
+RECONNECT_INTERVAL = 5     # seconds between connectivity checks
 
 load_dotenv()
 
-# -------------------------
-# SPOTIFY AUTH
-# -------------------------
 
-sp = spotipy.Spotify(
-    auth_manager=SpotifyOAuth(
-        client_id=os.getenv("SPOTIFY_CLIENT_ID"),
-        client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
-        redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI"),
-        scope="user-read-currently-playing user-read-playback-state",
+# Helpers
+
+def create_spotify_client():
+    return spotipy.Spotify(
+        auth_manager=SpotifyOAuth(
+            client_id=os.getenv("SPOTIFY_CLIENT_ID"),
+            client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
+            redirect_uri=os.getenv("SPOTIFY_REDIRECT_URI"),
+            scope="user-read-currently-playing user-read-playback-state",
+        )
     )
-)
 
-# -------------------------
-# SERIAL
-# -------------------------
+
+def has_internet(host="8.8.8.8", port=53, timeout=3):
+    try:
+        sock = socket.create_connection((host, port), timeout=timeout)
+        sock.close()
+        return True
+    except OSError:
+        return False
+
+
+def wait_for_internet():
+    print("Waiting for internet connection...")
+
+    while True:
+        if has_internet():
+            print("Internet connection restored.")
+            return
+        time.sleep(RECONNECT_INTERVAL)
+
+
+
+# Spotify Auth
+
+sp = create_spotify_client()
+
+
+# Serial
 
 print(f"Connecting to {SERIAL_PORT}...")
 
@@ -53,28 +77,26 @@ time.sleep(2)
 print("Connected.")
 print("Waiting for Spotify playback...")
 
-# -------------------------
-# STATE
-# -------------------------
+
+# State
 
 last_track_id = None
 
-# -------------------------
-# MAIN LOOP
-# -------------------------
+
+# Main Loop
 
 while True:
     try:
         playback = sp.current_playback()
 
         if playback is None:
-            time.sleep(2)
+            time.sleep(POLL_INTERVAL)
             continue
 
         item = playback.get("item")
 
         if item is None:
-            time.sleep(2)
+            time.sleep(POLL_INTERVAL)
             continue
 
         track_id = item["id"]
@@ -102,14 +124,31 @@ while True:
 
             last_track_id = track_id
 
-        time.sleep(2)
+        time.sleep(POLL_INTERVAL)
 
     except KeyboardInterrupt:
         print("\nExiting...")
         break
 
-    except Exception as e:
-        print("Error:", e)
-        time.sleep(5)
+    except (ConnectionError, Timeout, OSError) as e:
+        print(f"\nLost connection to Spotify API: {e}")
+        wait_for_internet()
+        print("Reconnecting to Spotify...")
+        sp = create_spotify_client()
+        print("Reconnected. Resuming playback polling...")
+
+    except SpotifyException as e:
+        print(f"\nSpotify API error: {e}")
+
+        if e.http_status in (502, 503, 504):
+            # Server-side issue — wait for connectivity and retry
+            wait_for_internet()
+            print("Reconnecting to Spotify...")
+            sp = create_spotify_client()
+            print("Reconnected. Resuming playback polling...")
+        else:
+            # Other API errors (rate limit, auth, etc.) — brief pause and retry
+            print(f"Retrying in {RECONNECT_INTERVAL}s...")
+            time.sleep(RECONNECT_INTERVAL)
 
 ser.close()
