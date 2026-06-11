@@ -167,7 +167,7 @@ Blinding Lights
 * [x] Spotify Web API integration
 * [x] USB serial communication
 * [ ] CLI application + background service
-* [ ] Scrolling text for long titles
+* [x] Scrolling text for long titles
 * [ ] Auto-start on login
 
 ### v1.1
