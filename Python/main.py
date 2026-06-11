@@ -10,9 +10,9 @@ import os
 # CONFIG
 # -------------------------
 
-SERIAL_PORT = "COM3"      # Windows
+# SERIAL_PORT = "COM3"      # Windows
 
-# SERIAL_PORT = "/dev/ttyUSB0"   # Linux
+SERIAL_PORT = "/dev/ttyUSB0"   # Linux
 # SERIAL_PORT = "/dev/ttyACM0"   # Linux alternative
 
 BAUDRATE = 115200
