@@ -8,14 +8,37 @@ String line1 = "";
 String line2 = "";
 String incoming = "";
 
+int scroll1 = 0;
+int scroll2 = 0;
+
+unsigned long lastScroll = 0;
+const unsigned long scrollDelay = 350; // ms
+
+void drawLine(uint8_t row, const String& text, int offset) {
+    lcd.setCursor(0, row);
+
+    if (text.length() <= 16) {
+        String padded = text;
+
+        while (padded.length() < 16) {
+            padded += " ";
+        }
+
+        lcd.print(padded);
+        return;
+    }
+
+    String scrollText = text + "    ";
+
+    for (int i = 0; i < 16; i++) {
+        int index = (offset + i) % scrollText.length();
+        lcd.print(scrollText[index]);
+    }
+}
+
 void redraw() {
-    lcd.clear();
-
-    lcd.setCursor(0, 0);
-    lcd.print(line1.substring(0, 16));
-
-    lcd.setCursor(0, 1);
-    lcd.print(line2.substring(0, 16));
+    drawLine(0, line1, scroll1);
+    drawLine(1, line2, scroll2);
 }
 
 void setup() {
@@ -26,38 +49,77 @@ void setup() {
     lcd.init();
     lcd.backlight();
 
-    lcd.setCursor(0, 0);
-    lcd.print("Waiting for");
+    lcd.clear();
 
-    lcd.setCursor(0, 1);
-    lcd.print("Spotify...");
+    line1 = "Waiting for";
+    line2 = "Spotify...";
+
+    redraw();
+}
+
+void handleMessage(String message) {
+    message.trim();
+
+    if (message.startsWith("1:")) {
+        line1 = message.substring(2);
+        scroll1 = 0;
+        redraw();
+    }
+    else if (message.startsWith("2:")) {
+        line2 = message.substring(2);
+        scroll2 = 0;
+        redraw();
+    }
 }
 
 void loop() {
-    while (Serial.available()) {
 
+    while (Serial.available()) {
         char c = Serial.read();
 
-        if (c == '\r')
+        if (c == '\r') {
             continue;
+        }
 
         if (c == '\n') {
-
-            if (incoming.startsWith("1:")) {
-                line1 = incoming.substring(2);
-                line1.trim();
-                redraw();
-            }
-            else if (incoming.startsWith("2:")) {
-                line2 = incoming.substring(2);
-                line2.trim();
-                redraw();
-            }
-
+            handleMessage(incoming);
             incoming = "";
         }
         else {
             incoming += c;
         }
+    }
+
+    unsigned long now = millis();
+
+    if (now - lastScroll >= scrollDelay) {
+
+        bool needsRedraw = false;
+
+        if (line1.length() > 16) {
+            scroll1++;
+
+            if (scroll1 >= line1.length() + 4) {
+                scroll1 = 0;
+            }
+
+            needsRedraw = true;
+        }
+
+        if (line2.length() > 16) {
+            scroll2++;
+
+            if (scroll2 >= line2.length() + 4) {
+                scroll2 = 0;
+            }
+
+            needsRedraw = true;
+        }
+
+        if (needsRedraw) {
+            redraw();
+        }
+
+        lastScroll = now;
     }
 }
