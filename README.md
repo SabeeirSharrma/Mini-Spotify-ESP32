@@ -30,16 +30,18 @@ This project displays the currently playing Spotify track on a small external di
 * USB cable
 * Computer running Spotify
 
-### Wiring
+### Wiring (For DEVKITV1)
+
+Check for equivalents if not the same type of ESP32 (for eg. D is sometimes replaced by GPIO)
 
 | LCD | ESP32   |
 | --- | ------- |
-| VCC | 5V      |
+| VCC | VIN     |
 | GND | GND     |
-| SDA | GPIO 21 |
-| SCL | GPIO 22 |
+| SDA | D21     |
+| SCL | D22     |
 
-Default I²C address:
+Default I2C address:
 
 ```text
 0x27
@@ -71,8 +73,8 @@ The desktop application polls the Spotify Web API for playback information and s
 ### Clone the Repository
 
 ```bash
-git clone https://github.com/USERNAME/spotify-display.git
-cd spotify-display
+git clone https://github.com/SabeeirSharrma/Mini-Spotify-ESP32.git
+cd Mini-Spotify-ESP32
 ```
 
 ### Python Dependencies
