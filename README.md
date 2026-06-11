@@ -26,7 +26,7 @@ This project displays the currently playing Spotify track on a small external di
 ### Required Components
 
 * ESP32 development board
-* 16x2 I²C LCD display
+* 16x2 I2C LCD display
 * USB cable
 * Computer running Spotify
 
