@@ -1,5 +1,6 @@
 import time
 import socket
+import unicodedata
 import serial
 import spotipy
 
@@ -55,6 +56,13 @@ def wait_for_internet():
             return
         time.sleep(RECONNECT_INTERVAL)
 
+
+def sanitize_for_lcd(text):
+    # NFKD decomposition splits e.g. 'é' into 'e' + combining acute accent
+    decomposed = unicodedata.normalize("NFKD", text)
+
+    # Keep only ASCII characters (the combining marks are non-ASCII and get dropped)
+    return decomposed.encode("ascii", errors="ignore").decode("ascii")
 
 
 # Spotify Auth
@@ -116,10 +124,13 @@ while True:
             print("Artist:", artist_text)
             print("Song  :", song)
 
-            ser.write(f"1:{artist_text}\n".encode("utf-8"))
+            lcd_artist = sanitize_for_lcd(artist_text)
+            lcd_song = sanitize_for_lcd(song)
+
+            ser.write(f"1:{lcd_artist}\n".encode("utf-8"))
             time.sleep(0.05)
 
-            ser.write(f"2:{song}\n".encode("utf-8"))
+            ser.write(f"2:{lcd_song}\n".encode("utf-8"))
             time.sleep(0.05)
 
             last_track_id = track_id
